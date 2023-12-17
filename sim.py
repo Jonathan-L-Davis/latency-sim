@@ -2,17 +2,17 @@ import numpy as np
 import statistics as st
 import matplotlib.pyplot as plt
 import math
-import copy
+import random
 
 
 # BEHOLD! my python structs
-class message:
+class message:# unused struct
     time_sent = 0
     time_received = -1
 
 
 class drone:
-    messages = []
+    messages = []#unused field
     team_mates = [] #integer list of indices
     is_hit = False
 
@@ -30,8 +30,8 @@ def eval_network(net):
     retMe = []
     max_iters = len(net.drones)-1 # worst case is a drones are in a snake/line, and we start at the end
     
-    current_messengers = net.start_points
-    next_messengers = []
+    current_messengers = set(net.start_points)
+    next_messengers = set()
     
     counter = []
     
@@ -41,6 +41,7 @@ def eval_network(net):
     #mess = message()
     
     time_received = 0
+    print("max iter: ",max_iters)
     while time_received < max_iters and len(current_messengers):
         #print(time_received)
         #print(current_messengers)
@@ -49,14 +50,14 @@ def eval_network(net):
             #tmp = message()
             if counter[x] < 0 :
                 counter[x] = time_received
-            next_messengers.extend(net.drones[x].team_mates)
+            next_messengers.update( (net.drones[x].team_mates) )
         #print(next_messengers)
         
         
         #print( len(current_messengers), "," , len(next_messengers) )
         
         current_messengers = next_messengers
-        next_messengers = []
+        next_messengers = set()
         
         time_received += 1
         
@@ -70,6 +71,8 @@ def eval_network(net):
     #       ░╚═══██╗░░░██║░░░██╔══██║░░░██║░░░██║░╚═══██╗░░░██║░░░██║██║░░██╗░╚═══██╗
     #       ██████╔╝░░░██║░░░██║░░██║░░░██║░░░██║██████╔╝░░░██║░░░██║╚█████╔╝██████╔╝
     #       ╚═════╝░░░░╚═╝░░░╚═╝░░╚═╝░░░╚═╝░░░╚═╝╚═════╝░░░░╚═╝░░░╚═╝░╚════╝░╚═════╝░
+    
+    # python actually makes this easy
     
     stats = []
     percentiles = []
@@ -85,6 +88,7 @@ def eval_network(net):
     
     mode = st.multimode(counter)
     stats.append(mode)
+    print(counter.count(-1) )
     
     #print(stats)
     return stats;
@@ -92,6 +96,7 @@ def eval_network(net):
 
 def tree_network(depth, base):
     fill_me = network()
+    fill_me.drones = []
     
     assert(type(depth)==int)
     assert(type(base)==int)
@@ -134,19 +139,45 @@ def tree_network(depth, base):
     return fill_me
 
 #uses randomness
-def mesh_network(num_drones, connection_density ):
+def mesh_network(num_drones, num_start_drones, connection_density ):
     assert(type(num_drones)==int)
+    assert(type(num_start_drones)==int)
+    assert(type(connection_density)==float or type(connection_density)==int)
+    assert(connection_density >= 0.0 and connection_density <= 1.0 )
+    
+    fill_me = network()
+    fill_me.drones = []
+    
+    i = 0
+    while i < num_drones:
+        fill_me.drones.append(drone())
+        fill_me.drones[i].team_mates = random.sample(range(0, num_drones), int(num_drones*connection_density))
+        #print( fill_me.drones[i].team_mates )
+        i += 1
+    
+    fill_me.start_points = random.sample(range(0, num_drones), num_start_drones)
+    #print("???",len(fill_me.drones))
     
     
-    return
+    #random.sample(range(1, int( num_drones*connection_density )), )
+    
+    return fill_me
 
 def mixed_network(num_drones, connection_density, tree_factor ):
     assert(type(num_drones)==int)
     #idk what tree factor is, but it feels like it might be useful right now. Something to do with clumping
     return
 
-topology = tree_network(10,2)
-eval_network(topology)
+topology = tree_network(3,10)
+print(eval_network(topology))
+#print( "?",len( topology.drones ) )
+
+
+
+topology2 = mesh_network(1000,1,.01)
+#print( "?",len( topology.drones ) )
+#print( "?",len( topology2.drones ) )
+print(eval_network(topology2))
 
 
 
